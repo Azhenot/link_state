@@ -1,3 +1,5 @@
+const myRouter = 'R1';
+const splitMessage = ' ';
 var PORT = 33333;
 var HOST = '127.0.0.1';
 
@@ -23,7 +25,7 @@ server.bind(PORT, HOST);
 
 // Extraction du type de paquet, le première partie du paquet
 handlePacket = function(message) {
-	var res = message.toString().split(" ");
+	var res = message.toString().split(splitMessage);
 	var packetType = res[0];
 	res.shift();
 	checkPacket(packetType, res);
@@ -56,7 +58,7 @@ lspPacket = function(res) {
 // Gestion des paquets LSACK
 lsackPacket = function(res) {
 }
-
+const spawn = require('threads').spawn;
 // Gestion des paquets DATA
 dataPacket = function(res) {
 	var source = res[0];	
@@ -64,11 +66,51 @@ dataPacket = function(res) {
 	var destination = res[0];
 	res.shift();
 	var msg = res.join(" ");
-	console.log('Source :'+source);
-	console.log('Destination :'+destination);
-	console.log('Message :'+msg);
 
-	//Lancer un thread ici
+	
+
+	if(destination != myRouter){
+		//transferMessage(source,destination,msg);
+
+	}else{
+		console.log('MESSAGE RECEIVED:')
+		console.log('Source :'+source);
+		console.log('Destination :'+destination);
+		console.log('Message :'+msg);
+	}
+}
+
+// Creation d'un thread pour transférer un message
+threadTransferMessage = function(res) {
+
+	const thread = spawn(function([source , destination, msg]) {
+		console.log('ici');
+		console.log('Source :'+source);
+		console.log('Destination :'+destination);
+		console.log('Message :'+msg);
+
+		// RECEPTION DES COORDONNEES DU ROUTEUR DESTINATION
+		// ACCES BD
+		var PORT = 33333;
+		var HOST = '127.0.0.1';
+		//////////////////////////////////////////////////////
+
+		var newMessage = new Buffer('DATA '+source+' '+' '+destination+' '+msg);
+
+		var client = dgram.createSocket('udp4');
+		client.send(newMessage, 0, newMessage.length, PORT, HOST, function(err, bytes) {
+				if (err) throw err;
+				console.log('Message UDP transféré à: ' + HOST +':'+ PORT);
+				client.close();
+			});
+		});		
+		thread.send([source, destination, msg])
+		.on('error', function(error) {
+			console.error('Worker errored:', error);
+		})
+		.on('exit', function() {
+			console.log('Worker has been terminated.');
+		});
 }
 
 

@@ -2,7 +2,7 @@ var PORT = 33333;
 var HOST = '127.0.0.1';
 
 var dgram = require('dgram');
-var message = new Buffer('DATA R2 R1 Je suis Tristan');
+var message = new Buffer('DATA R2 R3 Je suis Tristan');
 
 var client = dgram.createSocket('udp4');
 client.send(message, 0, message.length, PORT, HOST, function(err, bytes) {

@@ -1,0 +1,24 @@
+{
+  "name": "link_state",
+  "version": "1.0.0",
+  "description": "projet reseau",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Azhenot/link_state.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Azhenot/link_state/issues"
+  },
+  "homepage": "https://github.com/Azhenot/link_state#readme",
+  "dependencies": {
+    "commander": "^2.15.1",
+    "threads": "^0.10.1"
+  }
+}
