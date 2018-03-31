@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/linkState');
+var moment = require('moment');
 
 const Lsp = mongoose.model('Lsp', { leftRouter: String, rightRouter: String, cost: Number, lspSequence: Number });
 const Router = mongoose.model('Router', { number: String, ip: String, port: String, neighbour: Number });
 const LspSent =  mongoose.model('LspSent', {lspSequence: Number, routerNumber: String, date: Date});
-const LspTwoWay = mongoose.model('LspTwoWay', { leftRouter: String, rightRouter: String, cost: Number });
 
 module.exports = {
 
@@ -62,26 +62,6 @@ module.exports = {
             }
         });
         
-    },
-
-    addLspTwoWay: function(leftRouter, rightRouter, cost)  {
-        const lspTwoWay = new LspTwoWay({ leftRouter: leftRouter, rightRouter: rightRouter, cost: cost });
-        lspTwoWay.save().then(() => console.log('doneSaving LspTwoWay'));  
-    },
-
-    getLspTwoWay: function(router, callback) {
-        LspTwoWay.find({ $or:[ {'leftRouter': router}, {'rightRouter': router}]}, function(err, res){
-            if (err){
-                console.log("erreur get router");
-            }
-            else if(router == null){
-                console.log("Routeur n'existe pas");
-            }
-            else{	
-                console.log('Gpt lspTwoWays');
-                callback(res);
-            }
-        });
     },
 
     addLspPacket: function(routerNumber, lspSequence, res) {
@@ -165,7 +145,7 @@ module.exports = {
                 console.log("erreur create lspSent");
             }
             else if(lsp == null){
-                var lspSent = new LspSent({ lspSequence, routerNumber });
+                var lspSent = new LspSent({ lspSequence: lspSequence, routerNumber: routerNumber, date: moment() });
                 lspSent.save().then(() => console.log('done Saving lspSent'));
             }
             else{	
@@ -199,29 +179,28 @@ module.exports = {
         Lsp.remove({}).exec();
     },
 
-    removeLspTwoWay: function(){
-        LspTwoWay.remove({}).exec();
-    },
-
     getAllLspToResend : function(callback){
-
+        Lsp.find(function (err, lsps) {
+            if (err){
+                console.log("erreur get Lsp");
+            }
+            else{	
+                var j = 0;
+                var toSend = [];
+                while(j < lsps.length){
+                    if(moment().diff(lsps[j].date) > 5){
+                        toSend.push(lsps[j]);
+                    }
+                }
+                callback(toSend);
+            }
+        });
     },
 
     getAllLsp: function(callback){
         Lsp.find(function (err, lsps) {
             if (err){
                 console.log("erreur get Lsp");
-            }
-            else{	
-                callback(lsps);
-            }
-        });
-    },
-
-    getAllLspTwoWay: function(callback){
-        LspTwoWay.find(function (err, lsps) {
-            if (err){
-                console.log("erreur get LspTwoWay");
             }
             else{	
                 callback(lsps);

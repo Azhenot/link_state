@@ -8,20 +8,13 @@ const MY_ROUTER = 'R1';
 
 var dgram = require('dgram');
 var server = dgram.createSocket('udp4');
-
 var services = require('./services');
 var database = require('./database');
+const spawn = require('threads').spawn;
+const Graph = require('node-dijkstra')
 
 //database.createRouter('R1','127.0.0.1','33333',2)
 //database.createRouter('R2','127.0.0.1','33333',1)
-
-
-const spawn = require('threads').spawn;
-
-const Graph = require('node-dijkstra')
-
-
-
 
 // Message au démarrage du serveur
 server.on('listening', function () {
@@ -238,11 +231,12 @@ setInterval(function(lspSequence){
 		}
 	});
 }, 5000);
-const graph = new Map()
 
 generateLspGraph = function(){
+	const graph = new Map()
+	var lspTwoWay = [];
 	database.getAllLsp(function(lsps){
-		console.log(lsps)
+		lspTwoWay = [];
 		var i = 0;
 
 		while(i < lsps.length){
@@ -252,7 +246,7 @@ generateLspGraph = function(){
 	
 			while(j < lsps.length){
 				if(lsps[i].leftRouter === lsps[j].rightRouter && lsps[i].rightRouter === lsps[j].leftRouter){
-					database.addLspTwoWay(lsps[i].leftRouter, lsps[i].rightRouter, lsps[i].cost);
+					lspTwoWay.push({leftRouter: lsps[i].leftRouter, rightRouter: lsps[i].rightRouter, cost: lsps[i].cost});
 					lsps.splice(j,1);
 					--j;
 				}
@@ -265,15 +259,16 @@ generateLspGraph = function(){
 			var i = 0;
 			while(i < routers.length){
 				var number = routers[i].number;
-				database.getLspTwoWay(number, function(res){
-					console.log(res);
+				var res = [];
+				lspTwoWay.forEach(function(element){
+					if(element.leftRouter === number || element.rightRouter === number){
+						res.push(element);
+					}
+				});
 					if(res.length > 0){
-						console.log('la1')
-
 						var j = 0;
 						const a = new Map();
 						while (j < res.length){
-							console.log('la2')
 							if(res[j].leftRouter === number){
 								a.set(res[j].rightRouter, res[j].cost);
 							}else{
@@ -281,14 +276,17 @@ generateLspGraph = function(){
 							}
 							++j;
 						}
-						console.log('Map: '+number+' => '+a);
 						graph.set(number, a);
 					}
-				})
 				++i;
 			}
 			var numberOne = MY_ROUTER;
-			database.getLspTwoWay(numberOne, function(res){
+				var res = [];
+				lspTwoWay.forEach(function(element){
+					if(element.leftRouter === numberOne || element.rightRouter === numberOne){
+						res.push(element);
+					}
+				});
 				var p = 0;
 				const b = new Map();
 				while (p < res.length){
@@ -300,12 +298,8 @@ generateLspGraph = function(){
 					++p;
 				}
 				graph.set(numberOne, b);
-				console.log('Map: '+numberOne+' => '+b);
 				const route = new Graph(graph)
-				console.log(route.path('R1', 'R2'));
-				database.removeLspTwoWay();
-			});
-
+				console.log('Best path: '+route.path('R1', 'R3'));
 		})
 		
 	})	
