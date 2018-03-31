@@ -19,6 +19,9 @@
   "homepage": "https://github.com/Azhenot/link_state#readme",
   "dependencies": {
     "commander": "^2.15.1",
+    "moment": "^2.22.0",
+    "mongoose": "^5.0.12",
+    "node-dijkstra": "^2.5.0",
     "threads": "^0.10.1"
   }
 }
