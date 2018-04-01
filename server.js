@@ -3,18 +3,40 @@ var PORT = 33333;
 var HOST = '127.0.0.1';
 const HELLO_DELAY = 5000;
 const MAX_LSP_DELAY = 60000;
-const MY_ROUTER = 'R1';
-
-
+var MY_ROUTER = 'R1';
+const readline = require('readline');
 var dgram = require('dgram');
 var server = dgram.createSocket('udp4');
 var services = require('./services');
 var database = require('./database');
-const spawn = require('threads').spawn;
 const Graph = require('node-dijkstra')
 
-//database.createRouter('R1','127.0.0.1','33333',2)
-//database.createRouter('R2','127.0.0.1','33333',1)
+
+
+readConfigFile = function(){
+
+	const fs = require('fs');
+
+	const rl = readline.createInterface({
+	  input: fs.createReadStream('config.txt')
+	});
+
+	var cpt = 0;
+	rl.on('line', function (line) {
+		if(cpt == 0){
+			MY_ROUTER = line;
+		}else if(cpt == 1){
+			PORT = line;
+		}else if (cpt > 1){
+			var ligne = line.toString().split(splitMessage);
+			database.createRouter(ligne[0], ligne[1], ligne[2], 1);
+			database.addLsp(MY_ROUTER, ligne[0], ligne[3], 0)
+		}
+		++cpt;
+	});
+}
+
+readConfigFile();
 
 // Message au démarrage du serveur
 server.on('listening', function () {
@@ -315,6 +337,11 @@ database.addLsp('R3','R1', 9, 12);
 database.addLsp('R1','R3', 9, 12);*/
 //database.addLsp('R1','R3', 9, 12);
 //database.addLsp('R3','R4', 9, 12);
+
+
+
+
+
 
 
 
