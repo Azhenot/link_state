@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/linkState');
+mongoose.connect('mongodb://localhost/linkState3');
 var moment = require('moment');
 
 const Lsp = mongoose.model('Lsp', { leftRouter: String, rightRouter: String, cost: Number, lspSequence: Number });

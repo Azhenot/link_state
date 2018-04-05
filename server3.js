@@ -13,7 +13,7 @@ var MY_LSP_MESSAGE = '';
 const readline = require('readline');
 var dgram = require('dgram');
 var server = dgram.createSocket('udp4');
-var database = require('./database');
+var database = require('./database3');
 const Graph = require('node-dijkstra')
 
 
@@ -23,7 +23,7 @@ readConfigFile = function(){
 	const fs = require('fs');
 
 	const rl = readline.createInterface({
-	  input: fs.createReadStream('config.txt')
+	  input: fs.createReadStream('config3.txt')
 	});
 
 	var cpt = 0;
@@ -181,16 +181,16 @@ threadSendLspToNeighbours = function(lspSequence, source, res){
 	var newMessage = new Buffer('LSP '+lspSequence+' '+source+' 00 '+res);
 	database.getRouterNeighbour(function(routers){
 		while(i < routers.length){
-			var portDest = routers[i].port;
-			var hostDest = routers[i].ip;
+			var PORT = routers[i].port;
+			var HOST = routers[i].ip;
 			if(routers[i].number === source){
 				database.addLspSent(lspSequence, routers[i].number);
 				console.log('LSP enregistre2');
-				sendUdpMessage(new Buffer('LSACK '+source+' '+lspSequence), hostDest, portDest);
+				sendUdpMessage(new Buffer('LSACK '+source+' '+lspSequence), HOST, PORT);
 			}else{
 				database.addLspSent(lspSequence, routers[i].number);
 				console.log('LSP enregistre');
-				sendUdpMessage(newMessage, hostDest, portDest);
+				sendUdpMessage(newMessage, HOST, PORT);
 			}
 			++i;
 		}
@@ -216,11 +216,11 @@ threadRemoveLspSent = function(lspSequence, source){
 }
 
 // Envoi message UDP
-sendUdpMessage = function(newMessage, hostDest, portDest){
+sendUdpMessage = function(newMessage, HOST, PORT){
 	var client = dgram.createSocket('udp4');
-	client.send(newMessage, 0, newMessage.length, portDest, hostDest, function(err, bytes) {
+	client.send(newMessage, 0, newMessage.length, PORT, HOST, function(err, bytes) {
 		if (err) throw err;
-		console.log('Message UDP envoyé à: ' + hostDest +':'+ portDest);
+		console.log('Message UDP envoyé à: ' + HOST +':'+ PORT);
 		client.close();
 	});
 }
@@ -230,9 +230,9 @@ setInterval(function(){
 	database.getRouterNeighbour(function(routers){
 		var i = 0;
 		while(i < routers.length){
-			var portDest = routers[i].port;
-			var hostDest = routers[i].ip;
-			sendUdpMessage(new Buffer('HELLO '+MY_ROUTER+' '+routers[i].number), hostDest, portDest);
+			var PORT = routers[i].port;
+			var HOST = routers[i].ip;
+			sendUdpMessage(new Buffer('HELLO '+MY_ROUTER+' '+routers[i].number), HOST, PORT);
 			++i;
 		}
 	});
@@ -244,9 +244,9 @@ setInterval(function(){
 		database.getRouterNeighbour(function(routers){
 			var i = 0;
 			while(i < routers.length){
-				var portDest = routers[i].port;
-				var hostDest = routers[i].ip;
-				sendUdpMessage(new Buffer(lspMessage), hostDest, portDest);
+				var PORT = routers[i].port;
+				var HOST = routers[i].ip;
+				sendUdpMessage(new Buffer(lspMessage), HOST, PORT);
 				++i;
 			}
 		});
@@ -343,6 +343,17 @@ generateLspGraph = function(){
 		})		
 	})	
 }
+//generateLspGraph();
+/*database.addLsp('R1','R2', 1, 12);
+database.addLsp('R2','R3', 1, 12);
+database.addLsp('R2','R1', 1, 12);
+database.addLsp('R3','R2', 1, 12);
+database.addLsp('R3','R1', 9, 12);
+database.addLsp('R1','R3', 9, 12);*/
+//database.addLspSent(14, 'R3');
+//database.addLsp('R1','R3', 9, 12);
+//database.addLsp('R3','R4', 9, 12);
+
 
 
 
