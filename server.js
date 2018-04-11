@@ -1,8 +1,8 @@
 const splitMessage = ' ';
 var PORT;
 var HOST = '127.0.0.1';
-const HELLO_DELAY = 5000;
-const MAX_LSP_DELAY = 10000;
+var HELLO_DELAY = 5000;
+var MAX_LSP_DELAY = 10000;
 var MY_ROUTER = 'R1';
 var PATH_FINDER;
 var LSP_SEQUENCE = 0;
@@ -167,13 +167,31 @@ threadTransferMessage = function(source, destination, msg) {
 	console.log('Message :'+msg);
 
 	var path = PATH_FINDER.path(MY_ROUTER, destination);
-	var routes = path.split(',');
+	var routes = path.toString().split(',');
 
 	database.getRouter(routes[1], function(router){
 		var client = dgram.createSocket('udp4');
 		sendUdpMessage(new Buffer('DATA '+source+' '+' '+destination+' '+msg), router.ip, router.port);
 	});
 	
+}
+
+sendDataMessage = function(destination, msg) {
+	console.log('Destination :'+destination);
+	console.log('Message :'+msg);
+
+	var path = PATH_FINDER.path(MY_ROUTER, destination);
+	console.log(path);
+	var routes = path.toString().split(',');
+
+	database.getRouter(routes[1], function(router){
+		var client = dgram.createSocket('udp4');
+		if(router != null){
+			sendUdpMessage(new Buffer('DATA '+MY_ROUTER+' '+' '+destination+' '+msg), router.ip, router.port);
+		}else{
+			console.log('Routeur inexistant');
+		}
+	});
 }
 
 // Creation d'un thread qui renvoie le LSP recu à nos voisins sauf au voisin source, il recoit un LSACK
@@ -226,52 +244,6 @@ sendUdpMessage = function(newMessage, hostDest, portDest){
 		client.close();
 	});
 }
-
-// ENVOI toutes les HELLO_DELAY un paquet HELLO aux routeurs voisins
-setInterval(function(){ 
-	database.getRouterNeighbour(function(routers){
-		var i = 0;
-		while(i < routers.length){
-			var portDest = routers[i].port;
-			var hostDest = routers[i].ip;
-			sendUdpMessage(new Buffer('HELLO '+MY_ROUTER+' '+routers[i].number), hostDest, portDest);
-			++i;
-		}
-	});
-}, HELLO_DELAY);
-
-// Generation et envoi d'un paquet LSP à tous les voisins
-setInterval(function(){ 
-	generateLspString(function(lspMessage){
-		database.getRouterNeighbour(function(routers){
-			var i = 0;
-			while(i < routers.length){
-				var portDest = routers[i].port;
-				var hostDest = routers[i].ip;
-				sendUdpMessage(new Buffer(lspMessage), hostDest, portDest);
-				++i;
-			}
-		});
-	})
-}, MAX_LSP_DELAY);
-
-//on va garder la date du dernier lsp envoyé et envoyer ceux > 5 secondes
-//et puis update le temps envoyé
-setInterval(function(){ 
-	generateLspString(function(lspMessage){
-		database.getAllLspToResend(function(lspNoAck){
-		var i = 0;
-		console.log(lspNoAck);
-		while(i < lspNoAck.length){	
-			database.getRouter(lspNoAck[i].routerNumber, function(router){
-				sendUdpMessage(new Buffer(lspMessage), router.host, router.port);
-				
-			});
-			++i;
-		}
-		});
-	});
-}, 5000);
 
 generateLspGraph = function(){
 	console.log('generating graph...');
@@ -350,7 +322,44 @@ prompt.start();
 handleCommand = function(command){
 	var ligne = command.toString().split(splitMessage);
 	if(ligne[0] === 'send'){
-		console.log('ok');
+		ligne.shift();
+		var routerDestination = ligne[0];
+		ligne.shift();
+		var msg = ligne.join(splitMessage);
+		if(routerDestination != null){
+			sendDataMessage(routerDestination, msg);
+		}else{
+			console.log('Routeur de destination invalide');
+		}
+	}else if(ligne[0] === 'maxlspdelay'){
+		ligne.shift();
+		var maxlspdelay = ligne[0];
+		if(maxlspdelay != null){
+			if(!isNaN(maxlspdelay) && maxlspdelay > 0){
+				clearInterval(intervalLspId);
+				MAX_LSP_DELAY = maxlspdelay;
+				startIntervalLSP(Number(maxlspdelay));
+			}else{
+				console.log('maxlspdelay NaN');
+			}
+		}else{
+			console.log('maxlspdelay needed');
+		}
+	}else if(ligne[0] === 'hellodelay'){
+		ligne.shift();
+		var hellodelay = ligne[0];
+		if(hellodelay != null){
+			if(!isNaN(hellodelay) && hellodelay > 0){
+				clearInterval(intervalHelloId);
+				HELLO_DELAY = hellodelay;
+				startIntervalHello(Number(hellodelay));
+				console.log('hello delay updated to '+hellodelay)
+			}else{
+				console.log('hellodelay NaN')
+			}
+		}else{
+			console.log('hellodelay needed');
+		}
 	}else{
 		console.log('commande inconnue');
 	}
@@ -371,6 +380,62 @@ setTimeout(function(){
 	generateLspGraph();
 
 }, 5000);
+
+var intervalHelloId;
+function startIntervalHello(_interval) {
+	intervalHelloId = setInterval(function(){ 
+		database.getRouterNeighbour(function(routers){
+			var i = 0;
+			while(i < routers.length){
+				var portDest = routers[i].port;
+				var hostDest = routers[i].ip;
+				sendUdpMessage(new Buffer('HELLO '+MY_ROUTER+' '+routers[i].number), hostDest, portDest);
+				++i;
+			}
+		});
+	}, _interval);
+}
+
+var intervalLspId;
+function startIntervalLSP(_interval) {
+	// Generation et envoi d'un paquet LSP à tous les voisins	intervalId = 
+	intervalLspId = setInterval(function(){ 
+		generateLspString(function(lspMessage){
+			database.getRouterNeighbour(function(routers){
+				var i = 0;
+				while(i < routers.length){
+					var portDest = routers[i].port;
+					var hostDest = routers[i].ip;
+					sendUdpMessage(new Buffer(lspMessage), hostDest, portDest);
+					++i;
+				}
+			});
+		})
+	}, _interval);
+	
+}
+
+//on va garder la date du dernier lsp envoyé et envoyer ceux > 5 secondes
+//et puis update le temps envoyé
+setInterval(function(){ 
+
+	generateLspString(function(lspMessage){
+		database.getAllLspToResend(function(lspNoAck){
+		var i = 0;
+		console.log(lspNoAck);
+		while(i < lspNoAck.length){	
+			database.getRouter(lspNoAck[i].routerNumber, function(router){
+				sendUdpMessage(new Buffer(lspMessage), router.host, router.port);
+				
+			});
+			++i;
+		}
+		});
+	});
+}, 5000);
+
+startIntervalLSP(MAX_LSP_DELAY);
+startIntervalHello(HELLO_DELAY);
 
  
   

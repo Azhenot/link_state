@@ -212,6 +212,6 @@ module.exports = {
     },
 
     removeRouters: function()  {
-        Router.findOne({}).remove().exec();
+        Router.remove({}).exec();
     },
 };
