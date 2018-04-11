@@ -166,7 +166,7 @@ threadTransferMessage = function(source, destination, msg) {
 	console.log('Destination :'+destination);
 	console.log('Message :'+msg);
 
-	var path = PATH_FINDER.path('R1', destination);
+	var path = PATH_FINDER.path(MY_ROUTER, destination);
 	var routes = path.split(',');
 
 	database.getRouter(routes[1], function(router){
