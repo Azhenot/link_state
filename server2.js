@@ -37,6 +37,7 @@ readConfigFile = function(){
 			var ligne = line.toString().split(splitMessage);
 			database.createRouter(ligne[0], ligne[1], ligne[2], 1);
 			database.addLsp(MY_ROUTER, ligne[0], ligne[3], 0);
+			database.addLsp(ligne[0], MY_ROUTER , ligne[3], 0);
 			MY_LSP_MESSAGE = MY_LSP_MESSAGE + ligne[0] + ' ' + ligne[3] +' ';
 			console.log(MY_LSP_MESSAGE)
 		}
@@ -195,7 +196,7 @@ threadSendLspToNeighbours = function(lspSequence, source, res){
 			++i;
 		}
 		//Pas de timeout, un setInterval on va garder la date du dernier lsp envoyé et envoyer ceux > 5 secondes
-		setTimeout(function(lspSequence){ 
+		/*setTimeout(function(lspSequence){ 
 			database.getLspSent(lspSequence, function(lspNoAck){
 				var i = 0;
 				console.log(lspNoAck);
@@ -206,7 +207,7 @@ threadSendLspToNeighbours = function(lspSequence, source, res){
 					++i;
 				}
 			});
-		}, 5000);
+		}, 5000);*/
 	});
 }
 

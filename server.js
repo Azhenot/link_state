@@ -2,7 +2,7 @@ const splitMessage = ' ';
 var PORT;
 var HOST = '127.0.0.1';
 const HELLO_DELAY = 5000;
-const MAX_LSP_DELAY = 60000;
+const MAX_LSP_DELAY = 10000;
 var MY_ROUTER = 'R1';
 var PATH_FINDER;
 var LSP_SEQUENCE = 0;
@@ -14,6 +14,7 @@ const readline = require('readline');
 var dgram = require('dgram');
 var server = dgram.createSocket('udp4');
 var database = require('./database');
+var prompt = require('prompt');
 const Graph = require('node-dijkstra')
 
 
@@ -37,6 +38,7 @@ readConfigFile = function(){
 			var ligne = line.toString().split(splitMessage);
 			database.createRouter(ligne[0], ligne[1], ligne[2], 1);
 			database.addLsp(MY_ROUTER, ligne[0], ligne[3], 0);
+			database.addLsp(ligne[0], MY_ROUTER , ligne[3], 0); // Je peux faire ca?
 			MY_LSP_MESSAGE = MY_LSP_MESSAGE + ligne[0] + ' ' + ligne[3] +' ';
 			console.log(MY_LSP_MESSAGE)
 		}
@@ -195,7 +197,7 @@ threadSendLspToNeighbours = function(lspSequence, source, res){
 			++i;
 		}
 		//Pas de timeout, un setInterval on va garder la date du dernier lsp envoyé et envoyer ceux > 5 secondes
-		setTimeout(function(lspSequence){ 
+		/*setTimeout(function(lspSequence){ 
 			database.getLspSent(lspSequence, function(lspNoAck){
 				var i = 0;
 				console.log(lspNoAck);
@@ -206,7 +208,7 @@ threadSendLspToNeighbours = function(lspSequence, source, res){
 					++i;
 				}
 			});
-		}, 5000);
+		}, 5000);*/
 	});
 }
 
@@ -278,6 +280,7 @@ generateLspGraph = function(){
 	database.getAllLsp(function(lsps){
 		lspTwoWay = [];
 		var i = 0;
+		console.log('LSPS'+lsps)
 
 		while(i < lsps.length){
 			var j = 1;
@@ -343,7 +346,34 @@ generateLspGraph = function(){
 		})		
 	})	
 }
+prompt.start();
+handleCommand = function(command){
+	var ligne = command.toString().split(splitMessage);
+	if(ligne[0] === 'send'){
+		console.log('ok');
+	}else{
+		console.log('commande inconnue');
+	}
+}
+showPrompt = function(){
+	prompt.get(['command'], function (err, result) {
 
+		console.log('Command-line input received:');
+		console.log('  command: ' + result.command);
+		handleCommand(result.command);
+		
+		showPrompt();
+	});
+}
+showPrompt();
+
+setTimeout(function(){ 
+	generateLspGraph();
+
+}, 5000);
+
+ 
+  
 
 
 
