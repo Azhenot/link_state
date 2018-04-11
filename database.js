@@ -208,7 +208,19 @@ module.exports = {
 
     addLsp(leftRouter, rightRouter, cost, lspSequence){
         const newLsp = new Lsp({ leftRouter: leftRouter, rightRouter: rightRouter, cost: cost, lspSequence: lspSequence });
-        newLsp.save().then(() => console.log('done Saving Lsp'));
+        Lsp.findOne({'leftRouter': leftRouter, 'rightRouter': rightRouter, 'lspSequence': lspSequence}, function(err, lsp) {   
+            if(lsp != null){
+                if(lsp.cost == cost){
+                    console.log('lsp existe déjà');
+                }else{
+                    lsp.remove();
+                    newLsp.save().then(() => console.log('done Updating Lsp'));
+                }
+            }else{
+                newLsp.save().then(() => console.log('done Saving new Lsp'));
+            }
+            
+        });
     },
 
     removeRouters: function()  {

@@ -170,7 +170,6 @@ threadTransferMessage = function(source, destination, msg) {
 	var routes = path.toString().split(',');
 
 	database.getRouter(routes[1], function(router){
-		var client = dgram.createSocket('udp4');
 		sendUdpMessage(new Buffer('DATA '+source+' '+' '+destination+' '+msg), router.ip, router.port);
 	});
 	
@@ -214,23 +213,10 @@ threadSendLspToNeighbours = function(lspSequence, source, res){
 			}
 			++i;
 		}
-		//Pas de timeout, un setInterval on va garder la date du dernier lsp envoyé et envoyer ceux > 5 secondes
-		/*setTimeout(function(lspSequence){ 
-			database.getLspSent(lspSequence, function(lspNoAck){
-				var i = 0;
-				console.log(lspNoAck);
-				while(i < lspNoAck.length){	
-					database.getRouter(lspNoAck[i].routerNumber, function(router){
-						sendUdpMessage(newMessage, router.host, router.port);
-					});
-					++i;
-				}
-			});
-		}, 5000);*/
 	});
 }
 
-// Lorsqu'un LSACK est recu, suppression un LSP en question
+// Lorsqu'un LSACK est recu, suppression du LSP en question
 threadRemoveLspSent = function(lspSequence, source){
 	database.removeLspSent(lspSequence, source);		
 }
@@ -244,6 +230,9 @@ sendUdpMessage = function(newMessage, hostDest, portDest){
 		client.close();
 	});
 }
+
+var destinationArray = [];
+var stepArray = [];
 
 generateLspGraph = function(){
 	console.log('generating graph...');
@@ -315,6 +304,19 @@ generateLspGraph = function(){
 				graph.set(numberOne, b);
 				PATH_FINDER = new Graph(graph)
 				console.log('Best path: '+PATH_FINDER.path('R1', 'R3'));
+				var destinationArrayTemp = [];
+				var stepArrayTemp = [];
+				routers.forEach(function(element){
+					destinationArrayTemp.push(element.number);
+					stepArrayTemp.push(PATH_FINDER.path(MY_ROUTER, element.number).toString().split(',')[1]);
+				});
+				destinationArray = destinationArrayTemp;
+				stepArray = stepArrayTemp;
+				var cptTable = 0;
+				while(cptTable < destinationArray.length){
+					console.log(destinationArray[cptTable]+': via '+stepArray[cptTable]);
+					++cptTable;
+				}
 		})		
 	})	
 }
@@ -360,6 +362,12 @@ handleCommand = function(command){
 		}else{
 			console.log('hellodelay needed');
 		}
+	}else if(ligne[0] === 'routetable'){
+		var cptTable = 0;
+		while(cptTable < destinationArray.length){
+			console.log(destinationArray[cptTable]+': via '+stepArray[cptTable]);
+			++cptTable;
+		}
 	}else{
 		console.log('commande inconnue');
 	}
@@ -376,9 +384,10 @@ showPrompt = function(){
 }
 showPrompt();
 
+//génération du graphe une fois que tout est configuré
+//un timeout c'est moche, mais pas trouvé mieux sans changer tout le code :/
 setTimeout(function(){ 
 	generateLspGraph();
-
 }, 5000);
 
 var intervalHelloId;
