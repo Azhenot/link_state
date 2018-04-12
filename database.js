@@ -22,6 +22,31 @@ createRouterNoNeighbour = function(routerNumber)  {
     
 },
 
+handleCreateLsp = function(routerNumber, routerId, cost, lspSequence){
+    Lsp.findOneAndUpdate({'leftRouter': routerNumber, 'rightRouter': routerId, 'lspSequence':{$lt: lspSequence}},
+    { $set: { 'lspSequence': lspSequence,
+        'cost': cost}},
+            {new: true}, function(err, lsp) {     
+                if (err){
+                    console.log('erreur update lsp')
+                }else if(lsp == null){
+                    Lsp.findOne({'leftRouter': routerNumber, 'rightRouter': routerId, 'lspSequence':{$gte: lspSequence}},
+                                    function(err, lsp) {               
+                                    if (err){
+                                        console.log('erreur update lsp')
+                                    }else if(lsp == null){
+                                        const newLsp = new Lsp({ leftRouter: routerNumber, rightRouter: routerId, cost: cost, lspSequence: lspSequence });
+                                        newLsp.save().then(() => console.log('done Saving Lsp: '+routerNumber +' '+ routerId+' '+lspSequence+' '+cost));
+                                    }else{
+                                        console.log('lsp identique ou plus récent déjà ajouté: '+routerNumber +' '+ routerId+' '+lspSequence+' '+cost);
+                                    }
+                    });	     
+                }else{
+                    console.log('LSP mis à jour')
+                }
+    });	
+}
+
 module.exports = {
 
     getRouter: function(routerNumber, callback) {
@@ -97,28 +122,7 @@ module.exports = {
                     res.shift();
                     var cost = res[0];
                     res.shift();
-                    Lsp.findOneAndUpdate({'leftRouter': routerNumber, 'rightRouter': routerId, 'lspSequence':{$lt: lspSequence}},
-                        { $set: { 'lspSequence': lspSequence,
-                            'cost': cost}},
-                                {new: true}, function(err, lsp) {               
-                                    if (err){
-                                        console.log('erreur update lsp')
-                                    }else if(lsp == null){
-                                        Lsp.findOne({'leftRouter': routerNumber, 'rightRouter': routerId, 'lspSequence':{$gte: lspSequence}},
-                                                        function(err, lsp) {               
-                                                        if (err){
-                                                            console.log('erreur update lsp')
-                                                        }else if(lsp == null){
-                                                            const newLsp = new Lsp({ leftRouter: routerNumber, rightRouter: routerId, cost: cost, lspSequence: lspSequence });
-                                                            newLsp.save().then(() => console.log('done Saving Lsp'));
-                                                        }else{
-                                                            console.log('lsp identique ou plus récent déjà ajouté');
-                                                        }
-                                        });	     
-                                    }else{
-                                        console.log('LSP mis à jour')
-                                    }
-                    });	
+                    this.handleCreateLsp(routerNumber, routerId, cost, lspSequence)
                 }
                 return callback();
             }
@@ -132,7 +136,6 @@ module.exports = {
             }
             else if(lsp == null){
                 var lspSent = new LspSent({ lspSequence: lspSequence, routerNumber: routerNumber, date: moment() });
-                console.log(lspSent);
                 lspSent.save().then(() => console.log('done Saving lspSent'));
             }
             else{	
@@ -179,14 +182,9 @@ module.exports = {
                 var j = 0;
                 var toSend = [];
                 while(j < lsps.length){
-                    console.log('ici LSP');
-                    console.log(lsps[j])
-                    console.log(moment().toString() + lsps[j].date.toString())
                     if(moment().diff(lsps[j].date, 'seconds') > 5){
                         toSend.push(lsps[j]);
                         LspSent.findOne({'lspSequence': lsps[j].lspSequence, 'routerNumber': lsps[j].routerNumber}).remove().exec();
-                        console.log('ici LSP yes');
-
                     }
                     ++j;
                 }
@@ -218,8 +216,7 @@ module.exports = {
                 }
             }else{
                 newLsp.save().then(() => console.log('done Saving new Lsp'));
-            }
-            
+            }     
         });
     },
 
