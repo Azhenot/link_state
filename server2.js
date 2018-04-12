@@ -147,6 +147,10 @@ dataPacket = function(res) {
 	
 
 	if(destination != MY_ROUTER){
+		console.log('MESSAGE TO TRANSFER:')
+		console.log('Source :'+source);
+		console.log('Destination :'+destination);
+		console.log('Message :'+msg);
 		threadTransferMessage(source,destination,msg);
 	}else{
 		console.log('MESSAGE RECEIVED:')
@@ -159,31 +163,39 @@ dataPacket = function(res) {
 // Creation d'un thread pour transférer un message
 // Obtention du routeur via le graphe
 threadTransferMessage = function(source, destination, msg) {
-	var path = PATH_FINDER.path(MY_ROUTER, destination);
-	var routes = path.toString().split(',');
-
-	database.getRouter(routes[1], function(router){
-		sendUdpMessage(new Buffer('DATA '+source+' '+' '+destination+' '+msg), router.ip, router.port);
-	});
-	
+	var cptTable = 0;
+	while(cptTable < destinationArray.length){
+		console.log(destinationArray[cptTable]+': via '+stepArray[cptTable]);
+		if(destinationArray[cptTable] === destination){
+			database.getRouter(stepArray[cptTable], function(router){
+				console.log('DATA à destination de '+destination+' transféré à '+router.number+' Message: '+msg);
+				sendUdpMessage(new Buffer('DATA '+source+' '+destination+' '+msg), router.ip, router.port);
+			});
+			
+		}
+		++cptTable;
+	}
 }
 
 sendDataMessage = function(destination, msg) {
 	console.log('Destination :'+destination);
 	console.log('Message :'+msg);
 
-	var path = PATH_FINDER.path(MY_ROUTER, destination);
-	console.log(path);
-	var routes = path.toString().split(',');
-
-	database.getRouter(routes[1], function(router){
-		var client = dgram.createSocket('udp4');
-		if(router != null){
-			sendUdpMessage(new Buffer('DATA '+MY_ROUTER+' '+' '+destination+' '+msg), router.ip, router.port);
-		}else{
-			console.log('Routeur inexistant');
+	var cptTable = 0;
+	while(cptTable < destinationArray.length){
+		console.log(destinationArray[cptTable]+': via '+stepArray[cptTable]);
+		if(destinationArray[cptTable] === destination){
+			database.getRouter(stepArray[cptTable], function(router){
+				if(router != null){
+					console.log('DATA envoyé destination: '+destination+' via: '+router.number+' Message: '+msg);
+					sendUdpMessage(new Buffer('DATA '+MY_ROUTER+' '+destination+' '+msg), router.ip, router.port);
+				}else{
+					console.log('Routeur inexistant');
+				}			});
+			
 		}
-	});
+		++cptTable;
+	}
 }
 
 // Creation d'un thread qui renvoie le LSP recu à nos voisins sauf au voisin source, il recoit un LSACK
