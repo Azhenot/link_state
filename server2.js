@@ -38,7 +38,7 @@ readConfigFile = function(){
 			var ligne = line.toString().split(splitMessage);
 			database.createRouter(ligne[0], ligne[1], ligne[2], 1);
 			database.addLsp(MY_ROUTER, ligne[0], ligne[3], 0);
-			database.addLsp(ligne[0], MY_ROUTER , ligne[3], 0); // Je peux faire ca?
+			//database.addLsp(ligne[0], MY_ROUTER , ligne[3], 0); // Je peux faire ca?
 			MY_LSP_MESSAGE = MY_LSP_MESSAGE + ' '+ligne[0] + ' ' + ligne[3];
 		}
 		++cpt;
@@ -327,8 +327,9 @@ generateLspGraph = function(){
 					if(element.number != MY_ROUTER){
 						destinationArrayTemp.push(element.number);
 						var path = PATH_FINDER.path(MY_ROUTER, element.number);
-						stepArrayTemp.push(PATH_FINDER.path(MY_ROUTER, element.number).toString().split(',')[1]);
-					}		
+						if(path != null){
+							stepArrayTemp.push(PATH_FINDER.path(MY_ROUTER, element.number).toString().split(',')[1]);
+						}					}		
 				});
 				destinationArray = destinationArrayTemp;
 				stepArray = stepArrayTemp;
