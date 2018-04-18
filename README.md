@@ -4,7 +4,7 @@
 
 Server:
 
-Permet de démarrer une instance de routeur qui affciher tous les logs.
+Permet de démarrer une instance de routeur qui affcihe tous les logs.
 Pour démarrer: node .\Server
 
 CleanServer:
@@ -20,6 +20,7 @@ Pour démarrer: node .\RemoveALL
 
 Chaque type de fichier a également des versions 2 et 3. Ils sont utilisés pour tester le laboratoire. 
 Ils sont identiques sauf la référence à un fichier de configuration et la localisation de sa BD.
+
 
 
 
