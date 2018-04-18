@@ -382,10 +382,11 @@ handleCommand = function(command){
 }
 showPrompt = function(){
 	prompt.get(['command'], function (err, result) {
-
-		console.log('  command: ' + result.command);
-		handleCommand(result.command);
-		
+		if(result != undefined){
+			console.log('Command-line input received:');
+			console.log('  command: ' + result.command);
+			handleCommand(result.command);
+		}	
 		showPrompt();
 	});
 }
