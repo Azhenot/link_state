@@ -184,7 +184,8 @@ sendDataMessage = function(destination, msg) {
 					sendUdpMessage(new Buffer('DATA '+MY_ROUTER+' '+destination+' '+msg), router.ip, router.port);
 				}else{
 					console.log('Routeur inexistant');
-				}			});
+                }			
+            });
 			
 		}
 		++cptTable;
